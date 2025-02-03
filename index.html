@@ -69,6 +69,7 @@
     <div class="mx-auto col-10 col-md-8 col-lg-6">
         <br />
         <br />
+        
         <div class="form-group">
             <label for="username">使用者帳號</label>
             <input type="text" id="username" class="form-control" />
@@ -211,7 +212,7 @@
         class autoSendMessageClass {
            
             //這邊只允許一個channel連接
-            #channels = ['marsantonymars']; //shuteye_orange marsantonymars
+            #channels = [document.getElementById('username').value]; //['marsantonymars']; //shuteye_orange marsantonymars
             #client;
 
             constructor(options) {
