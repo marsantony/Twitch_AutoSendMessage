@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-    <title>Twitch自動回覆</title>
+    <title>Twitch自動發話給GP</title>
     <link rel="icon" href="start.gif" type="image/gif" />
     <style>
 
@@ -57,7 +57,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                             <li><a class="dropdown-item" href="/Twitch_AutoGameStatusUpdate">!遊戲指令更新</a></li>
-                            <li><a class="dropdown-item" href="/Twitch_AutoSendMessage">自動發GP</a></li>
+                            <li><a class="dropdown-item" href="/Twitch_AutoSendMessage">自動發話給GP</a></li>
                             <li><a class="dropdown-item" href="/Youtube_AutoVideosUpdate">!YT指令更新</a></li>
                         </ul>
                     </li>
@@ -167,10 +167,6 @@
         }
 
          function downloadXLSXFile(data) {
-             //var data = [
-              //   { '名稱': '張三', '年齡': 28, '性別': '男' },
-             //    { '名稱': '李四', '年齡': 22, '性別': '女' }
-             //];
              var now = moment().format('YYYYMMDDHHmmss');
              var worksheet = XLSX.utils.json_to_sheet(data);
              var workbook = XLSX.utils.book_new();
@@ -307,7 +303,7 @@
                         const account = args.shift();
 
                         let accountIndex = accounts.includes(account);
-                        givenAccounts.push({'已給帳號':account, '是否在原本的xlsx':accountIndex > -1 ? 'V' : ''});
+                        givenAccounts.push({'已給帳號':account, '是否在原本的EXCEL':accountIndex > -1 ? 'V' : ''});
 
                         var name = tags['display-name'] ? `${tags['display-name']}(${tags['username']})` : tags['username'];
                         var timeStamp = moment().format('YYYY/MM/DD HH:mm:ss');
