@@ -295,9 +295,9 @@
                     let accounts = XLSX_Data.map((obj) => Object.values(obj)[0]);
                     let givenAccounts = [];
                     this.#client.on('join', () => {
-                        accounts.forEach(account => {
-                             let message = this.sendMessage(account, GPAMOUNT);
-                             this.#client.say(`${this.#channels[0]}`, message);
+                        accounts.forEach((account, index) => {
+                            let message = this.sendMessage(account, GPAMOUNT);
+                            setTimeout(() => { this.#client.say(`${this.#channels[0]}`, message); }, 3000 * index);
                         });
                     });
                       
