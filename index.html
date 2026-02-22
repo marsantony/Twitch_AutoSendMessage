@@ -102,7 +102,6 @@
 
     <!-- Option 1: Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
-    <!--<script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>-->
     <script src="./js/tmi.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
@@ -111,9 +110,9 @@
     <script src="https://marsantony.github.io/shared/shared.js"></script>
     <script>
         var XLSX_Data = [];
-        function addLog(html) {
-            let oldLog = document.getElementById('log').innerHTML;
-            document.getElementById('log').innerHTML = `${html}\r\n${oldLog}`;
+        function addLog(message) {
+            var logEl = document.getElementById('log');
+            logEl.value = message + '\r\n' + logEl.value;
         }
 
          function downloadXLSXFile(data) {
@@ -139,7 +138,6 @@
 
                 XLSX_Data = jsonData;
                 addLog(JSON.stringify(jsonData, null, 2));
-                console.log(jsonData);
             };
 
             reader.readAsArrayBuffer(file);
@@ -160,8 +158,7 @@
 
         class autoSendMessageClass {
            
-            //這邊只允許一個channel連接
-            #channels; //['marsantonymars']; //shuteye_orange marsantonymars
+            #channels;
             #client;
 
             constructor(options) {
@@ -180,7 +177,7 @@
             #connect() {
                 this.#client = new tmi.Client({
                     options: {
-                        debug: true,
+                        debug: false,
                         skipMembership: true, // 不接收 JOIN/PART 訊息
                         skipUpdatingEmotesets: true,
                     },
@@ -189,17 +186,12 @@
                         secure: true
                     },
                     identity: {
-                        username: document.getElementById('username').value,            // [TODO]: input your Twitch username
-                        password: document.getElementById('password').value        // [TODO]: input the genereated oath password
-                        // 1. go to https://twitchapps.com/tmi/
-                        // 2. click "Connect"
-                        // 3. You will get a password beginning with "oath..."
-                        // 4. Copy the whole password and paste inside the 'genereated_oath_password'
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
                     },
-                    channels: this.#channels // [TODO]: input the channel name you want to listen to
+                    channels: this.#channels
                 });
 
-                //成功連接
                 this.#client.connect().catch(console.error);
             }
 
