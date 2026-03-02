@@ -146,7 +146,9 @@
 
     </script>
 
-    <script>
+    <script type="module">
+        import { buildSendCommand, parseExcelFirstColumn, buildReportRow, parseCommandEcho, isProcessingComplete } from './src/auto-send-utils.js';
+
         const GGPCOMMAND = 'ggp';
         const GPAMOUNT = '3000';
         const LOCALSTORAGE_USERNAME = 'Twitch_AutoSendMessage_UserName';
@@ -157,7 +159,7 @@
         document.getElementById('password').value = localStorage.getItem(LOCALSTORAGE_PASSWORD) || '';
 
         class autoSendMessageClass {
-           
+
             #channels;
             #client;
 
@@ -221,7 +223,7 @@
                         addLog('Excel未載入成功或沒有資料');
                         return;
                     }
-                    
+
                     this.#channels = [document.getElementById('username').value];
 
                     this.#showProcessing();
@@ -233,7 +235,7 @@
                     localStorage.setItem(LOCALSTORAGE_PASSWORD, document.getElementById('password').value);
 
 
-                    let accounts = XLSX_Data.map((obj) => Object.values(obj)[0]);
+                    let accounts = parseExcelFirstColumn(XLSX_Data);
                     let givenAccounts = [];
                     this.#client.on('join', () => {
                         accounts.forEach((account, index) => {
@@ -241,40 +243,37 @@
                             setTimeout(() => { this.#client.say(`${this.#channels[0]}`, message); }, 3000 * index);
                         });
                     });
-                      
+
                     this.#client.on('message', (channel, tags, message, self) => {
-                        if (!self || !message.startsWith('!')) return;
+                        if (!self) return;
 
-                        const args = message.slice(1).split(' ');
-                        const command = args.shift();
-                        if (args.length < 2 || command !== GGPCOMMAND) return;
+                        const parsed = parseCommandEcho(message, GGPCOMMAND);
+                        if (!parsed) return;
 
-                        const account = args.shift();
-
-                        givenAccounts.push({'已給帳號':account, '是否在原本的EXCEL':accounts.includes(account) ? 'V' : ''});
+                        givenAccounts.push(buildReportRow(parsed.account, accounts));
 
                         var name = tags['display-name'] ? `${tags['display-name']}(${tags['username']})` : tags['username'];
                         var timeStamp = moment().format('YYYY/MM/DD HH:mm:ss');
                         addLog(`${timeStamp} ${name}，發話：${message}`);
 
-                        if(givenAccounts.length == accounts.length) {
+                        if(isProcessingComplete(givenAccounts.length, accounts.length)) {
                             downloadXLSXFile(givenAccounts);
                             this.#showComplete();
                         }
                     });
 
-                    
+
                 });
             }
         };
 
-       
+
         new autoSendMessageClass({
             autoSendButtonName: 'autoSend',
             completeButtonName: 'complete',
             processingButtonName: 'processing',
             sendMessage: function (account, gpAmount) {
-                return `!${GGPCOMMAND} ${account} ${gpAmount}`;
+                return buildSendCommand(GGPCOMMAND, account, gpAmount);
             }
         }).init();
 
