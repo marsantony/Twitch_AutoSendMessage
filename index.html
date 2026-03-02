@@ -251,8 +251,7 @@
 
                         const account = args.shift();
 
-                        let accountIndex = accounts.includes(account);
-                        givenAccounts.push({'已給帳號':account, '是否在原本的EXCEL':accountIndex > -1 ? 'V' : ''});
+                        givenAccounts.push({'已給帳號':account, '是否在原本的EXCEL':accounts.includes(account) ? 'V' : ''});
 
                         var name = tags['display-name'] ? `${tags['display-name']}(${tags['username']})` : tags['username'];
                         var timeStamp = moment().format('YYYY/MM/DD HH:mm:ss');
