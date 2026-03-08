@@ -242,35 +242,33 @@
     <div class="container">
         <h1>Twitch自動發話給GP</h1>
 
-        <form>
+        <div id="authLoggedOut" class="form-group">
+            <button type="button" id="twitchLogin" class="btn btn-primary">使用 Twitch 登入</button>
+        </div>
+        <div id="authLoggedIn" style="display:none;">
             <div class="form-group">
-                <label for="username">使用者帳號</label>
-                <input type="text" id="username" required />
+                <span class="form-hint">已登入：<strong id="authUsername"></strong></span>
+                <button type="button" id="twitchLogout" class="btn btn-danger">登出</button>
             </div>
 
-            <div class="form-group">
-                <label for="password">OAuth密碼</label>
-                <a class="form-link" href="https://twitchtokengenerator.com/" target="_blank">Twitch取得oauth password</a>
-                <span class="form-hint">選Bot Chat Token，然後複製ACCESS TOKEN。前面要加上 oauth:{ACCESS TOKEN}</span>
-                <input type="password" id="password" required />
-            </div>
+            <form>
+                <div class="form-group">
+                    <label>
+                        載入忠誠點數換GP列表Excel（GP固定3000）
+                        <span class="excel-info">&#9432;<img src="./images/LoadExcel.jpg" width="300" /></span>
+                    </label>
+                    <input type="file" id="fileExcel" required />
+                </div>
 
-            <div class="form-group">
-                <label>
-                    載入忠誠點數換GP列表Excel（GP固定3000）
-                    <span class="excel-info">&#9432;<img src="./images/LoadExcel.jpg" width="300" /></span>
-                </label>
-                <input type="file" id="fileExcel" required />
-            </div>
+                <a class="tutorial-link" href="https://youtu.be/TsGoplqJPYI" target="_blank">開始自動發話 教學影片</a>
 
-            <a class="tutorial-link" href="https://youtu.be/TsGoplqJPYI" target="_blank">開始自動發話 教學影片</a>
-
-            <div class="btn-row">
-                <button type="button" id="autoSend" class="btn btn-primary">開始自動發話</button>
-                <button type="button" id="complete" class="btn btn-success" disabled style="display:none;">完成</button>
-                <button type="button" id="processing" class="btn btn-danger" disabled style="display:none;">處理中</button>
-            </div>
-        </form>
+                <div class="btn-row">
+                    <button type="button" id="autoSend" class="btn btn-primary">開始自動發話</button>
+                    <button type="button" id="complete" class="btn btn-success" disabled style="display:none;">完成</button>
+                    <button type="button" id="processing" class="btn btn-danger" disabled style="display:none;">處理中</button>
+                </div>
+            </form>
+        </div>
 
         <div class="form-group">
             <label for="log">回覆的LOG</label>
@@ -282,6 +280,7 @@
         </div>
     </div>
 
+    <script src="https://marsantony.github.io/shared/twitch-auth.js"></script>
     <script src="./js/tmi.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
@@ -325,16 +324,33 @@
     <script type="module">
         import { buildSendCommand, parseExcelFirstColumn, buildReportRow, parseCommandEcho, isProcessingComplete } from './src/auto-send-utils.js';
 
+        const CLIENT_ID = 'iq44451ylnoywa6g8yal91e1ajsu1e';
         const GGPCOMMAND = 'ggp';
         const GPAMOUNT = '3000';
-        const LOCALSTORAGE_USERNAME = 'Twitch_AutoSendMessage_UserName';
-        const LOCALSTORAGE_PASSWORD = 'Twitch_AutoSendMessage_Password';
 
-        const usernameEl = document.getElementById('username');
-        const passwordEl = document.getElementById('password');
+        const authLoggedOutEl = document.getElementById('authLoggedOut');
+        const authLoggedInEl = document.getElementById('authLoggedIn');
+        const authUsernameEl = document.getElementById('authUsername');
 
-        usernameEl.value = localStorage.getItem(LOCALSTORAGE_USERNAME) || '';
-        passwordEl.value = localStorage.getItem(LOCALSTORAGE_PASSWORD) || '';
+        // ── Auth UI ──
+        const updateAuthUI = () => {
+            const loggedIn = TwitchAuth.isLoggedIn();
+            authLoggedOutEl.style.display = loggedIn ? 'none' : '';
+            authLoggedInEl.style.display = loggedIn ? '' : 'none';
+            if (loggedIn) {
+                authUsernameEl.textContent = TwitchAuth.getUsername();
+            }
+        };
+
+        document.getElementById('twitchLogin').addEventListener('click', () => {
+            TwitchAuth.login(CLIENT_ID);
+        });
+
+        document.getElementById('twitchLogout').addEventListener('click', () => {
+            TwitchAuth.logout().then(() => {
+                updateAuthUI();
+            });
+        });
 
         class autoSendMessageClass {
 
@@ -355,6 +371,7 @@
             }
 
             #connect() {
+                const username = TwitchAuth.getUsername();
                 this.#client = new tmi.Client({
                     options: {
                         debug: false,
@@ -366,8 +383,8 @@
                         secure: true
                     },
                     identity: {
-                        username: usernameEl.value,
-                        password: passwordEl.value
+                        username: username,
+                        password: TwitchAuth.getToken()
                     },
                     channels: this.#channels
                 });
@@ -400,14 +417,11 @@
                         return;
                     }
 
-                    this.#channels = [usernameEl.value];
+                    this.#channels = [TwitchAuth.getUsername()];
 
                     this.#showProcessing();
                     if (!this.#client)
                         this.#connect();
-
-                    localStorage.setItem(LOCALSTORAGE_USERNAME, usernameEl.value);
-                    localStorage.setItem(LOCALSTORAGE_PASSWORD, passwordEl.value);
 
                     const accounts = parseExcelFirstColumn(XLSX_Data);
                     const givenAccounts = [];
@@ -445,6 +459,11 @@
             processingButtonName: 'processing',
             sendMessage: (account, gpAmount) => buildSendCommand(GGPCOMMAND, account, gpAmount)
         }).init();
+
+        // ── Init ──
+        TwitchAuth.tryRestore().then(() => {
+            updateAuthUI();
+        });
     </script>
 </body>
 
